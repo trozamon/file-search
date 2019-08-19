@@ -1,0 +1,23 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+applicationName = 'solr-indexer'
+mainClassName = 'com.alectenharmsel.indexer.Main'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.9'
+    compile 'org.apache.tika:tika-core:1.22'
+    compile 'org.apache.tika:tika-parsers:1.22'
+}
+
+run {
+    args 'example.config'
+}
