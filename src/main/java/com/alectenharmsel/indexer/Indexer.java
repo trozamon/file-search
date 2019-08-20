@@ -115,8 +115,6 @@ class Indexer implements Runnable {
             ioe.printStackTrace();
         }
 
-        System.exit(0);
-
         vertx.setTimer(REST, otherId -> {
             vertx.eventBus().publish(Main.SCHEDULING_CHANNEL, index.getName());
         });
