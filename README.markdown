@@ -1,18 +1,20 @@
-# Solr Indexer
+# File Search Engine
 
-Very simple little indexer for Solr.
+Simple little search engine that indexes files and displays a little web
+interface to search them.
 
 ## Running
 
-    java -jar solr-indexer.jar <path/to/config>
+    ./gradlew build
+    java -jar file-search.jar <path/to/config>
 
 Config files are JSON and look like:
 
     {
-      "server": "http://solr.example.com:8983",
-      "collections": [
+      "server": "http://elastic.example.com:9200",
+      "indices": [
         {
-          "name": "my_collection",
+          "name": "Logs",
           "directory": "/var/log"
         }
       ]

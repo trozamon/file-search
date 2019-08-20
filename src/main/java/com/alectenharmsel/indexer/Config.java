@@ -12,7 +12,7 @@ class Config
     private String server;
 
     @JsonProperty
-    private List<Collection> collections;
+    private List<Index> indices;
 
     public static Config load(String fname) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
@@ -24,11 +24,11 @@ class Config
         return server;
     }
 
-    public List<Collection> getCollections() {
-        return collections;
+    public List<Index> getIndices() {
+        return indices;
     }
 
-    public static class Collection {
+    public static class Index {
         @JsonProperty
         private String name;
 
@@ -37,6 +37,10 @@ class Config
 
         public String getName() {
             return name;
+        }
+
+        public String getActualName() {
+            return getName().replaceAll("\\W", "").toLowerCase();
         }
 
         public String getDirectory() {

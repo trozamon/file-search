@@ -1,17 +1,18 @@
 package com.alectenharmsel.indexer;
 
+import io.vertx.core.Vertx;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.stream.Stream;
-import org.apache.tika.Tika;
-import org.apache.tika.exception.TikaException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 class Main {
+    public static final String SCHEDULING_CHANNEL = "scheduling";
+
+    private Config conf;
+
     public static void main(String[] args) {
         if (args.length != 1) {
-            System.out.println("Usage: solr-indexer <path/to/config>");
+            System.out.println("Usage: file-search <path/to/config>");
             System.exit(1);
         }
 
@@ -25,44 +26,36 @@ class Main {
             System.exit(2);
         }
 
-        run(conf);
+        new Main(conf).run();
     }
 
-    private static void run(Config conf) {
-        System.out.println("POSTing to " + conf.getServer());
+    public Main(Config conf) {
+        this.conf = conf;
+    }
 
-        for (Config.Collection coll : conf.getCollections()) {
-            try {
-                Files.find(
-                        Paths.get(coll.getDirectory()),
-                        Integer.MAX_VALUE,
-                        (path, attrs) -> {
-                            return attrs.isRegularFile();
-                        })
-                    .forEach(path -> {
-                        visit(path);
-                    });
-            } catch (IOException ioe) {
-                System.out.println("Can't walk " + coll.getDirectory());
-                ioe.printStackTrace();
-            }
+    private void run() {
+        Vertx vertx = Vertx.vertx();
+        ExecutorService execs = Executors.newFixedThreadPool(1);
+
+        vertx.eventBus().consumer(SCHEDULING_CHANNEL, message -> {
+            String indexName = message.body().toString();
+
+            System.out.println("Scheduling " + indexName);
+            execs.submit(new Indexer(vertx, getIndex(indexName)));
+        });
+
+        for (Config.Index idx : conf.getIndices()) {
+            execs.submit(new Indexer(vertx, idx));
         }
     }
 
-    private static void visit(Path path) {
-        Tika tika = new Tika();
-
-        try {
-            String res = tika.parseToString(path);
-
-            if (null != res) {
-                System.out.println("Indexing " + path.toString());
+    private Config.Index getIndex(String name) {
+        for (Config.Index idx : conf.getIndices()) {
+            if (name.equals(idx.getName())) {
+                return idx;
             }
-        } catch (IOException ioe) {
-            System.err.println("Error reading file " + path.toString());
-            ioe.printStackTrace();
-        } catch (TikaException te) {
-            System.out.println("Not indexing file " + path.toString());
         }
+
+        return null;
     }
 }
