@@ -7,8 +7,15 @@ NOTE: still extremely in-progress.
 
 ## Running
 
+    # development
+    ./gradlew run
+
+    # production
     ./gradlew build
-    java -jar file-search.jar <path/to/config>
+    cd build/distributions
+    unzip file-search.zip
+    cd file-search
+    bin/file-search ../../../example.config
 
 Config files are JSON and look like:
 

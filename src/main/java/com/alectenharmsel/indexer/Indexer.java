@@ -10,7 +10,6 @@ import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.http.HttpHost;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.elasticsearch.action.DocWriteResponse;
@@ -21,10 +20,7 @@ import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.core.MainResponse;
-import org.elasticsearch.client.Node;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 
 class Indexer implements Runnable {
@@ -36,21 +32,11 @@ class Indexer implements Runnable {
     private Tika tika;
     private RestHighLevelClient client;
 
-    public Indexer(Vertx vertx, Config.Index index) {
+    public Indexer(Vertx vertx, Config conf, Config.Index index) {
         this.vertx = vertx;
         this.index = index;
         this.tika = new Tika();
-
-        RestClientBuilder builder =
-            RestClient.builder(new HttpHost("127.0.0.1", 9200, "http"));
-        builder.setFailureListener(new RestClient.FailureListener() {
-            @Override
-            public void onFailure(Node node) {
-                System.err.println("Failed");
-            }
-        });
-
-        this.client = new RestHighLevelClient(builder);
+        this.client = ElasticUtil.createClient(conf);
     }
 
     @Override

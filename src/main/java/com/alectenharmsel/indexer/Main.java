@@ -1,6 +1,9 @@
 package com.alectenharmsel.indexer;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServer;
+import io.vertx.ext.web.Router;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,15 +40,28 @@ class Main {
         Vertx vertx = Vertx.vertx();
         ExecutorService execs = Executors.newFixedThreadPool(1);
 
+        vertx.exceptionHandler(new ExceptionLogger());
+
+        HttpServer server = vertx.createHttpServer()
+            .exceptionHandler(new ExceptionLogger());
+        Router router = Router.router(vertx)
+            .exceptionHandler(new ExceptionLogger());
+
+        router.route()
+            .method(HttpMethod.GET)
+            .blockingHandler(new SearchHandler(conf));
+
+        server.requestHandler(router).listen(8080);
+
         vertx.eventBus().consumer(SCHEDULING_CHANNEL, message -> {
             String indexName = message.body().toString();
 
             System.out.println("Scheduling " + indexName);
-            execs.submit(new Indexer(vertx, getIndex(indexName)));
+            execs.submit(new Indexer(vertx, conf, getIndex(indexName)));
         });
 
         for (Config.Index idx : conf.getIndices()) {
-            execs.submit(new Indexer(vertx, idx));
+            execs.submit(new Indexer(vertx, conf, idx));
         }
     }
 
