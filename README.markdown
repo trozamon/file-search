@@ -3,6 +3,8 @@
 Simple little search engine that indexes files and displays a little web
 interface to search them.
 
+NOTE: still extremely in-progress.
+
 ## Running
 
     ./gradlew build
