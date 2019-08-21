@@ -49,7 +49,7 @@ class Main {
 
         router.route()
             .method(HttpMethod.GET)
-            .blockingHandler(new SearchHandler(conf));
+            .blockingHandler(new SearchHandler(vertx, conf));
 
         server.requestHandler(router).listen(8080);
 

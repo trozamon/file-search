@@ -1,0 +1,24 @@
+doctype html
+html(lang="en")
+  head
+    title File Search
+
+  body
+    h1 File Search
+
+    form(action="/",method="get")
+
+      select(name="idx")
+        each index in indices
+          option(value=index.getActualName())= index.getName()
+
+      label Search
+      input(type="text",name="q",value=q)
+
+      input(type="submit",value="Search")
+
+    if filenames
+      each fname in filenames
+        p= fname
+    else
+      p No results

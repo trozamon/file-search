@@ -1,16 +1,21 @@
 package com.alectenharmsel.indexer;
 
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.templ.jade.JadeTemplateEngine;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -23,17 +28,19 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 class SearchHandler implements Handler<RoutingContext> {
 
-    public static final int SIZE = 100;
+    public static final int SIZE = 20;
 
     private static final Logger log =
         Logger.getLogger(SearchHandler.class.getName());
 
     private Config conf;
     private RestHighLevelClient client;
+    private JadeTemplateEngine jade;
 
-    public SearchHandler(Config conf) {
+    public SearchHandler(Vertx vertx, Config conf) {
         this.conf = conf;
         this.client = ElasticUtil.createClient(conf);
+        this.jade = JadeTemplateEngine.create(vertx);
     }
 
     @Override
@@ -49,18 +56,28 @@ class SearchHandler implements Handler<RoutingContext> {
             idx = conf.getIndices().get(0).getName();
         }
 
-        if (null != q && null != idx) {
-            try {
-                List<String> filenames = search(idx, q, 1);
+        Map<String, Object> renderContext = new HashMap<>();
 
-                resp.end("query is " + q + " results: " + filenames.get(0));
-            } catch (Exception e) {
-                resp.end("Error processing request");
-                log.log(Level.SEVERE, e, () -> "Unhandled error");
-            }
-        } else {
-            resp.end("no query");
+        renderContext.put("q", q);
+        renderContext.put("idx", idx);
+        renderContext.put("indices", conf.getIndices());
+
+        if (null != q && null != idx) {
+            List<String> filenames = search(idx, q, 1);
+            renderContext.put("filenames", filenames);
         }
+
+        jade.render(renderContext, "index", res -> {
+            if (res.succeeded()) {
+                log.fine(() -> "Rendered index");
+                resp.putHeader("Content-Type", "text/html");
+                resp.end(res.result());
+            } else {
+                log.log(Level.SEVERE, "Error rendering index", res.cause());
+                resp.putHeader("Content-Type", "text/plain");
+                resp.end("Sorry, there was an error processing your request");
+            }
+        });
     }
 
     private List<String> search(String idx, String q, int page) {
