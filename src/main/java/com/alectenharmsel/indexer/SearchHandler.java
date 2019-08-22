@@ -51,6 +51,15 @@ class SearchHandler implements Handler<RoutingContext> {
 
         String q = first(ctx.queryParam("q"));
         String idx = first(ctx.queryParam("idx"));
+        int page = 1;
+        try {
+            String tmp = first(ctx.queryParam("page"));
+            if (null != tmp) {
+                page = Integer.parseInt(tmp);
+            }
+        } catch (NumberFormatException nfe) {
+            log.log(Level.WARNING, nfe, () -> "Could not parse page");
+        }
 
         if (null == idx && !conf.getIndices().isEmpty()) {
             idx = conf.getIndices().get(0).getName();
@@ -61,9 +70,12 @@ class SearchHandler implements Handler<RoutingContext> {
         renderContext.put("q", q);
         renderContext.put("idx", idx);
         renderContext.put("indices", conf.getIndices());
+        renderContext.put("page", page);
+        renderContext.put("prevPage", Math.max(page - 1, 1));
+        renderContext.put("nextPage", Math.min(page + 1, Integer.MAX_VALUE));
 
         if (null != q && null != idx) {
-            List<String> filenames = search(idx, q, 1);
+            List<String> filenames = search(idx, q, page);
             renderContext.put("filenames", filenames);
         }
 

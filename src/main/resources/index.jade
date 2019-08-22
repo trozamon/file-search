@@ -22,3 +22,6 @@ html(lang="en")
         p= fname
     else
       p No results
+
+    a(href="/?q=#{q}&idx=#{idx}&page=#{prevPage}") &larr;
+    a(href="/?q=#{q}&idx=#{idx}&page=#{nextPage}") &rarr;
