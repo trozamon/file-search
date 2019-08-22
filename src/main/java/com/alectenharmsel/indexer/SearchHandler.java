@@ -71,12 +71,18 @@ class SearchHandler implements Handler<RoutingContext> {
         renderContext.put("idx", idx);
         renderContext.put("indices", conf.getIndices());
         renderContext.put("page", page);
-        renderContext.put("prevPage", Math.max(page - 1, 1));
-        renderContext.put("nextPage", Math.min(page + 1, Integer.MAX_VALUE));
 
         if (null != q && null != idx) {
-            List<String> filenames = search(idx, q, page);
-            renderContext.put("filenames", filenames);
+            SearchResult result = search(idx, q, page);
+            renderContext.put("filenames", result.filenames);
+
+            float total = (float) result.total;
+            total /= (float) SIZE;
+            int totalPages = (int) Math.ceil(total);
+
+            renderContext.put("totalPages", totalPages);
+            renderContext.put("prevPage", Math.max(page - 1, 1));
+            renderContext.put("nextPage", Math.min(page + 1, totalPages));
         }
 
         jade.render(renderContext, "index", res -> {
@@ -92,7 +98,7 @@ class SearchHandler implements Handler<RoutingContext> {
         });
     }
 
-    private List<String> search(String idx, String q, int page) {
+    private SearchResult search(String idx, String q, int page) {
         SearchRequest req = new SearchRequest(idx); 
         SearchSourceBuilder source = new SearchSourceBuilder(); 
 
@@ -104,12 +110,14 @@ class SearchHandler implements Handler<RoutingContext> {
 
         req.source(source);
 
-        List<String> result = new ArrayList<String>();
+        SearchResult result = new SearchResult();
 
         try {
             SearchResponse resp = client.search(req, RequestOptions.DEFAULT);
             SearchHits hits = resp.getHits();
             long total = hits.getTotalHits().value;
+
+            result.total = total;
 
             for (SearchHit hit : hits.getHits()) {
                 Map<String, Object> body = hit.getSourceAsMap();
@@ -118,7 +126,7 @@ class SearchHandler implements Handler<RoutingContext> {
                 String decoded = new String(
                         Base64.getUrlDecoder().decode(fname));
 
-                result.add(decoded);
+                result.filenames.add(decoded);
             }
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -133,5 +141,15 @@ class SearchHandler implements Handler<RoutingContext> {
         }
 
         return null;
+    }
+
+    private static class SearchResult {
+        List<String> filenames;
+        long total;
+
+        public SearchResult() {
+            filenames = new ArrayList<>();
+            total = 0;
+        }
     }
 }

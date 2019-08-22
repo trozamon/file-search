@@ -23,5 +23,8 @@ html(lang="en")
     else
       p No results
 
-    a(href="/?q=#{q}&idx=#{idx}&page=#{prevPage}") &larr;
-    a(href="/?q=#{q}&idx=#{idx}&page=#{nextPage}") &rarr;
+    if prevPage && nextPage
+      a(href="/?q=#{q}&idx=#{idx}&page=1") &larr;
+      a(href="/?q=#{q}&idx=#{idx}&page=#{prevPage}") &larr;
+      a(href="/?q=#{q}&idx=#{idx}&page=#{nextPage}") &rarr;
+      a(href="/?q=#{q}&idx=#{idx}&page=#{totalPages}") &rarr;
