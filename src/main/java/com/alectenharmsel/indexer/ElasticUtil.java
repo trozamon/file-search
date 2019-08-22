@@ -2,6 +2,7 @@ package com.alectenharmsel.indexer;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.logging.Logger;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.Node;
 import org.elasticsearch.client.RestClient;
@@ -9,6 +10,10 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 
 final class ElasticUtil {
+
+    private static final Logger log =
+        Logger.getLogger(ElasticUtil.class.getName());
+
     private ElasticUtil() {
     }
 
@@ -23,10 +28,11 @@ final class ElasticUtil {
 
         RestClientBuilder builder = RestClient.builder(
                 new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme()));
+
         builder.setFailureListener(new RestClient.FailureListener() {
             @Override
             public void onFailure(Node node) {
-                System.err.println("Failed");
+                log.severe("ElasticSearch node failed");
             }
         });
 

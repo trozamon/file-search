@@ -10,6 +10,8 @@ import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.elasticsearch.action.DocWriteResponse;
@@ -19,13 +21,17 @@ import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
 import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.client.core.MainResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.core.MainResponse;
 
 class Indexer implements Runnable {
+
     // 12 hour delay between indexing
     public static final int REST = 12 * 60 * 60 * 1000;
+
+    private static final Logger log =
+        Logger.getLogger(Indexer.class.getName());
 
     private Vertx vertx;
     private Config.Index index;
@@ -44,7 +50,7 @@ class Indexer implements Runnable {
         try {
             walk();
         } catch (Exception re) {
-            System.out.println("Exception here");
+            log.log(Level.SEVERE, re, () -> "Exception in main indexing loop");
             re.printStackTrace();
         }
     }
@@ -56,34 +62,25 @@ class Indexer implements Runnable {
         int depth = Integer.MAX_VALUE;
 
         try {
-            boolean resp = client.ping(RequestOptions.DEFAULT);
-            if (resp) {
-                System.out.println("Good!");
-            } else {
-                System.out.println("Bad!");
-            }
-
-            MainResponse response = client.info(RequestOptions.DEFAULT);
-            System.out.println(response.getClusterUuid());
-            System.out.println(response.getNodeName());
-
             GetIndexRequest req = new GetIndexRequest();
             req.indices(index.getActualName());
 
             boolean exists = client.indices().exists(req, RequestOptions.DEFAULT);
 
             if (!exists) {
-                System.out.println("Does not exist, creating...");
+                log.info(() -> {
+                    return "Index " + index.getActualName() +
+                        " does not exist, creating...";
+                });
+
                 CreateIndexRequest request = new CreateIndexRequest(index.getActualName()); 
                 CreateIndexResponse createIndexResponse = client.indices().create(request, RequestOptions.DEFAULT);
-                boolean acknowledged = createIndexResponse.isAcknowledged();
-
-                System.out.println("acknowledged: " + acknowledged);
             } else {
-                System.out.println("Already existed...");
+                log.info(() -> "Index " + index.getActualName() + " exists");
             }
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+            log.log(Level.SEVERE, ioe, () -> "Error with ElasticSearch");
+            return;
         }
 
         try {
@@ -91,14 +88,15 @@ class Indexer implements Runnable {
                 .find(root, depth, (path, attrs) -> attrs.isRegularFile())
                 .forEach(path -> indexPath(path));
         } catch (IOException ioe) {
-            System.out.println("Can't walk " + index.getDirectory());
-            ioe.printStackTrace();
+            log.log(Level.SEVERE, ioe,
+                    () -> "Error walking" + index.getDirectory());
         }
 
         try {
             this.client.close();
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+            log.log(Level.WARNING, ioe,
+                    () -> "Could not close ElasticSearch client");
         }
 
         vertx.setTimer(REST, otherId -> {
@@ -115,7 +113,7 @@ class Indexer implements Runnable {
                 .hashString(path.toString(), StandardCharsets.UTF_8)
                 .toString();
 
-            System.out.println("Indexing " + path.toString());
+            log.finest(() -> "Indexing " + path.toString());
 
             Map<String, String> jsonMap = new HashMap<>();
             jsonMap.put("filename", filename);
@@ -128,18 +126,18 @@ class Indexer implements Runnable {
             IndexResponse resp =
                 client.index(request, RequestOptions.DEFAULT);
 
-            if (resp.getResult() == DocWriteResponse.Result.CREATED) {
-                System.out.println("Created");
-            } else if (resp.getResult() == DocWriteResponse.Result.UPDATED) {
-                System.out.println("Updated");
+            if (resp.getResult() == DocWriteResponse.Result.CREATED ||
+                    resp.getResult() == DocWriteResponse.Result.UPDATED) {
+                log.finest(() -> "Indexed " + path.toString());
             } else {
-                System.out.println("Other");
+                log.finest(() -> "Got other response for " + path.toString());
             }
         } catch (IOException ioe) {
-            System.err.println("Error reading file " + path.toString());
+            log.log(Level.SEVERE, ioe,
+                    () -> "Error reading file " + path.toString());
             ioe.printStackTrace();
         } catch (TikaException te) {
-            System.out.println("Not indexing file " + path.toString());
+            log.finest(() -> "Not indexing " + path.toString());
         }
     }
 }
