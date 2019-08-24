@@ -19,7 +19,7 @@ html(lang="en")
         .fields
           .field
             label(for="idx") Index
-            select.ui.dropdown(name="idx")
+            select.ui.dropdown#index-dropdown(name="idx")
               each index in indices
                 option(value=index.getActualName())= index.getName()
 
@@ -52,3 +52,4 @@ html(lang="en")
 
   script
     $('.ui.dropdown').dropdown();
+    $('#index-dropdown').dropdown('set selected', '#{idx}');

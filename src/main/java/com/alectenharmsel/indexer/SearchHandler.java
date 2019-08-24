@@ -1,17 +1,20 @@
 package com.alectenharmsel.indexer;
 
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.templ.jade.JadeTemplateEngine;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -125,6 +128,19 @@ class SearchHandler implements Handler<RoutingContext> {
                 String fname = (String) body.get("filename");
                 String decoded = new String(
                         Base64.getUrlDecoder().decode(fname));
+
+                Optional<Config.Index> index = conf.getIndices().stream()
+                    .filter(i -> i.getActualName().equals(idx))
+                    .findFirst();
+
+                if (index.isPresent()) {
+                    String root = Paths.get(index.get().getDirectory())
+                        .toAbsolutePath()
+                        .normalize()
+                        .toString();
+
+                    decoded = decoded.substring(root.length() + 1);
+                }
 
                 result.filenames.add(decoded);
             }
