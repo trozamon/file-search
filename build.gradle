@@ -23,6 +23,31 @@ dependencies {
     compile 'org.elasticsearch.client:elasticsearch-rest-high-level-client:7.3.0'
 }
 
+task yarn(type: Exec) {
+    commandLine 'yarn'
+    args 'install'
+    inputs.files('package.json', 'yarn.lock')
+    outputs.dir('node_modules')
+}
+
+task copyJquery(type: Copy) {
+    from 'node_modules/jquery/dist'
+    include 'jquery.min.js'
+    into 'build/resources/main/webroot'
+}
+
+task copySemantic(type: Copy) {
+    from 'node_modules/semantic-ui-css'
+    include 'semantic.min.*'
+    into 'build/resources/main/webroot'
+}
+
+copyJquery.dependsOn yarn
+copySemantic.dependsOn yarn
+
+jar.dependsOn copyJquery
+jar.dependsOn copySemantic
+
 run {
     jvmArgs '-Dvertxweb.environment=dev'
     args 'example.config'

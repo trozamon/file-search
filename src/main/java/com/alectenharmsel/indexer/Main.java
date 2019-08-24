@@ -4,6 +4,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.StaticHandler;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,7 +48,10 @@ class Main {
         Router router = Router.router(vertx)
             .exceptionHandler(new ExceptionLogger());
 
-        router.route()
+        router.route("/static/*")
+            .method(HttpMethod.GET)
+            .handler(StaticHandler.create("webroot"));
+        router.route("/")
             .method(HttpMethod.GET)
             .blockingHandler(new SearchHandler(vertx, conf));
 
