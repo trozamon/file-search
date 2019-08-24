@@ -39,6 +39,7 @@ task copyJquery(type: Copy) {
 task copySemantic(type: Copy) {
     from 'node_modules/semantic-ui-css'
     include 'semantic.min.*'
+    include 'themes/**/*'
     into 'build/resources/main/webroot'
 }
 

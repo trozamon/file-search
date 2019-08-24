@@ -11,27 +11,43 @@ html(lang="en")
     title File Search
 
   body
-    h1 File Search
+    .ui.container
+      h1.ui.header(style="margin-top: 1em;") File Search
 
-    form(action="/",method="get")
+      form.ui.form(action="/",method="get")
 
-      select(name="idx")
-        each index in indices
-          option(value=index.getActualName())= index.getName()
+        .fields
+          .field
+            label(for="idx") Index
+            select.ui.dropdown(name="idx")
+              each index in indices
+                option(value=index.getActualName())= index.getName()
 
-      label Search
-      input(type="text",name="q",value=q)
+          .field
+            label(for="q") Query
+            input(type="text",name="q",value=q)
 
-      input(type="submit",value="Search")
+          .field
+            input.ui.button(type="submit",value="Search")
 
-    if filenames
-      each fname in filenames
-        p= fname
-    else
-      p No results
+      if filenames
+        each fname in filenames
+          p= fname
+      else
+        p No results
 
-    if prevPage && nextPage
-      a(href="/?q=#{q}&idx=#{idx}&page=1") &larr;
-      a(href="/?q=#{q}&idx=#{idx}&page=#{prevPage}") &larr;
-      a(href="/?q=#{q}&idx=#{idx}&page=#{nextPage}") &rarr;
-      a(href="/?q=#{q}&idx=#{idx}&page=#{totalPages}") &rarr;
+      if prevPage && nextPage
+        a.ui.basic.button(href="/?q=#{q}&idx=#{idx}&page=1")
+          i.ui.angle.double.left.icon
+
+        a.ui.basic.button(href="/?q=#{q}&idx=#{idx}&page=#{prevPage}")
+          i.ui.angle.left.icon
+
+        a.ui.basic.button(href="/?q=#{q}&idx=#{idx}&page=#{nextPage}")
+          i.ui.angle.right.icon
+
+        a.ui.basic.button(href="/?q=#{q}&idx=#{idx}&page=#{totalPages}")
+          i.ui.angle.double.right.icon
+
+  script
+    $('.ui.dropdown').dropdown();
