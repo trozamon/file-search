@@ -43,11 +43,8 @@ task copySemantic(type: Copy) {
     into 'build/resources/main/webroot'
 }
 
-copyJquery.dependsOn yarn
-copySemantic.dependsOn yarn
-
-jar.dependsOn copyJquery
-jar.dependsOn copySemantic
+classes.dependsOn copyJquery
+classes.dependsOn copySemantic
 
 run {
     jvmArgs '-Dvertxweb.environment=dev'

@@ -8,9 +8,11 @@ NOTE: still extremely in-progress.
 ## Running
 
     # development
+    yarn install
     ./gradlew run
 
     # production
+    yarn install
     ./gradlew build
     cd build/distributions
     unzip file-search.zip
