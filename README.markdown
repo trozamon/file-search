@@ -9,6 +9,7 @@ NOTE: still extremely in-progress.
 
     # development
     yarn install
+    docker-compose up -d # for ElasticSearch
     ./gradlew run
 
     # production
