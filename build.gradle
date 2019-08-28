@@ -20,7 +20,7 @@ dependencies {
     compile 'io.vertx:vertx-web:3.8.0'
     compile 'org.apache.tika:tika-core:1.22'
     compile 'org.apache.tika:tika-parsers:1.22'
-    compile 'org.elasticsearch.client:elasticsearch-rest-high-level-client:7.3.0'
+    compile 'org.elasticsearch.client:elasticsearch-rest-high-level-client:7.3.1'
 }
 
 task yarn(type: Exec) {
