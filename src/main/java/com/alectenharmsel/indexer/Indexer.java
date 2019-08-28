@@ -99,6 +99,8 @@ class Indexer implements Runnable {
                     () -> "Could not close ElasticSearch client");
         }
 
+        log.info(() -> "Done indexing " + index.getActualName());
+
         vertx.setTimer(REST, otherId -> {
             vertx.eventBus().publish(Main.SCHEDULING_CHANNEL, index.getName());
         });
