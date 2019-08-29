@@ -37,8 +37,10 @@ class Indexer implements Runnable {
     private Config.Index index;
     private Tika tika;
     private RestHighLevelClient client;
+    private boolean running;
 
     public Indexer(Vertx vertx, Config conf, Config.Index index) {
+        this.running = true;
         this.vertx = vertx;
         this.index = index;
         this.tika = new Tika();
@@ -47,6 +49,10 @@ class Indexer implements Runnable {
 
     @Override
     public void run() {
+        vertx.eventBus().consumer(Main.SHUTDOWN_CHANNEL, msg -> {
+            this.running = false;
+        });
+
         try {
             walk();
         } catch (Exception re) {
@@ -87,6 +93,9 @@ class Indexer implements Runnable {
             Files
                 .find(root, depth, (path, attrs) -> attrs.isRegularFile())
                 .forEach(path -> indexPath(path));
+        } catch (NeedToStop nts) {
+            log.info(() -> "Quit indexing " + index.getActualName());
+            return;
         } catch (IOException ioe) {
             log.log(Level.SEVERE, ioe,
                     () -> "Error walking" + index.getDirectory());
@@ -107,6 +116,10 @@ class Indexer implements Runnable {
     }
 
     private void indexPath(Path path) {
+        if (!running) {
+            throw new NeedToStop();
+        }
+
         try {
             String content = tika.parseToString(path);
             String filename = Base64.getUrlEncoder()
@@ -141,5 +154,8 @@ class Indexer implements Runnable {
         } catch (TikaException te) {
             log.finest(() -> "Not indexing " + path.toString());
         }
+    }
+
+    private static class NeedToStop extends RuntimeException {
     }
 }

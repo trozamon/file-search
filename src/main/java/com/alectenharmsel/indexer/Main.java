@@ -11,35 +11,47 @@ import java.util.concurrent.Executors;
 
 class Main {
     public static final String SCHEDULING_CHANNEL = "scheduling";
+    public static final String SHUTDOWN_CHANNEL = "shutdown";
+
+    private static Main m = new Main();
 
     private Config conf;
+    private Vertx vertx;
+    private ExecutorService execs;
 
     public static void main(String[] args) {
-        if (args.length != 1) {
-            System.out.println("Usage: file-search <path/to/config>");
+        if (args.length < 1) {
+            System.out.println("Usage: file-search <start|stop> <path/to/config>");
             System.exit(1);
         }
 
-        Config conf = null;
+        if ("stop".equals(args[0])) {
+            m.stop();
+        } else if (args.length == 2) {
+            Config conf = null;
 
-        try {
-            conf = Config.load(args[0]);
-        } catch (IOException ioe) {
-            System.out.println("Could not open config");
-            ioe.printStackTrace();
-            System.exit(2);
+            try {
+                conf = Config.load(args[1]);
+            } catch (IOException ioe) {
+                System.out.println("Could not open config");
+                ioe.printStackTrace();
+                System.exit(2);
+            }
+
+            m.conf = conf;
+            m.run();
         }
-
-        new Main(conf).run();
     }
 
-    public Main(Config conf) {
-        this.conf = conf;
+    private void stop() {
+        vertx.eventBus().publish(SHUTDOWN_CHANNEL, "");
+        vertx.close();
+        execs.shutdown();
     }
 
     private void run() {
-        Vertx vertx = Vertx.vertx();
-        ExecutorService execs = Executors.newFixedThreadPool(1);
+        vertx = Vertx.vertx();
+        execs = Executors.newFixedThreadPool(1);
 
         vertx.exceptionHandler(new ExceptionLogger());
 

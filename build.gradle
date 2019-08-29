@@ -48,5 +48,12 @@ classes.dependsOn copySemantic
 
 run {
     jvmArgs '-Dvertxweb.environment=dev'
-    args 'example.config'
+    args 'start', 'example.config'
+}
+
+task stop(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = mainClassName
+    jvmArgs '-Dvertxweb.environment=dev'
+    args 'stop'
 }
