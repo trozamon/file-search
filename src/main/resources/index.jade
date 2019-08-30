@@ -28,6 +28,10 @@ html(lang="en")
             input(type="text",name="q",value=q)
 
           .field
+            label(for="count") # Per Page
+            input(type="number",name="count",value=count)
+
+          .field
             label &nbsp;
             input.ui.button(type="submit",value="Search")
 
@@ -38,16 +42,16 @@ html(lang="en")
         p No results
 
       if prevPage && nextPage
-        a.ui.basic.button(href="/?q=#{q}&idx=#{idx}&page=1")
+        a.ui.basic.button(href="/?q=#{q}&idx=#{idx}&page=1&count=#{count}")
           i.ui.angle.double.left.icon
 
-        a.ui.basic.button(href="/?q=#{q}&idx=#{idx}&page=#{prevPage}")
+        a.ui.basic.button(href="/?q=#{q}&idx=#{idx}&page=#{prevPage}&count=#{count}")
           i.ui.angle.left.icon
 
-        a.ui.basic.button(href="/?q=#{q}&idx=#{idx}&page=#{nextPage}")
+        a.ui.basic.button(href="/?q=#{q}&idx=#{idx}&page=#{nextPage}&count=#{count}")
           i.ui.angle.right.icon
 
-        a.ui.basic.button(href="/?q=#{q}&idx=#{idx}&page=#{totalPages}")
+        a.ui.basic.button(href="/?q=#{q}&idx=#{idx}&page=#{totalPages}&count=#{count}")
           i.ui.angle.double.right.icon
 
   script

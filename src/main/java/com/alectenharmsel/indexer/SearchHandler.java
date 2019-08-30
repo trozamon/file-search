@@ -32,6 +32,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 class SearchHandler implements Handler<RoutingContext> {
 
     public static final int SIZE = 20;
+    public static final int SIZE_MAX = 1000;
 
     private static final Logger log =
         Logger.getLogger(SearchHandler.class.getName());
@@ -55,10 +56,16 @@ class SearchHandler implements Handler<RoutingContext> {
         String q = first(ctx.queryParam("q"));
         String idx = first(ctx.queryParam("idx"));
         int page = 1;
+        int count = SIZE;
         try {
             String tmp = first(ctx.queryParam("page"));
             if (null != tmp) {
                 page = Integer.parseInt(tmp);
+            }
+
+            tmp = first(ctx.queryParam("count"));
+            if (null != tmp) {
+                count = Math.max(0, Math.min(Integer.parseInt(tmp), SIZE_MAX));
             }
         } catch (NumberFormatException nfe) {
             log.log(Level.WARNING, nfe, () -> "Could not parse page");
@@ -74,13 +81,14 @@ class SearchHandler implements Handler<RoutingContext> {
         renderContext.put("idx", idx);
         renderContext.put("indices", conf.getIndices());
         renderContext.put("page", page);
+        renderContext.put("count", count);
 
         if (null != q && null != idx) {
-            SearchResult result = search(idx, q, page);
+            SearchResult result = search(idx, q, page, count);
             renderContext.put("filenames", result.filenames);
 
             float total = (float) result.total;
-            total /= (float) SIZE;
+            total /= (float) count;
             int totalPages = (int) Math.ceil(total);
 
             renderContext.put("totalPages", totalPages);
@@ -101,13 +109,13 @@ class SearchHandler implements Handler<RoutingContext> {
         });
     }
 
-    private SearchResult search(String idx, String q, int page) {
+    private SearchResult search(String idx, String q, int page, int count) {
         SearchRequest req = new SearchRequest(idx); 
         SearchSourceBuilder source = new SearchSourceBuilder(); 
 
         source.query(QueryBuilders.queryStringQuery(q).field("content"));
-        source.from((page - 1) * SIZE);
-        source.size(SIZE);
+        source.from((page - 1) * count);
+        source.size(count);
         source.timeout(new TimeValue(10, TimeUnit.SECONDS));
         source.fetchSource(true);
 
