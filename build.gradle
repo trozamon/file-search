@@ -43,10 +43,25 @@ task copySemantic(type: Copy) {
     into 'build/resources/main/webroot'
 }
 
+distZip {
+    into(project.name) {
+        from 'bin'
+        include '*.exe'
+        include '*.bat'
+    }
+}
+
 classes.dependsOn copyJquery
 classes.dependsOn copySemantic
 
 run {
     jvmArgs '-Dvertxweb.environment=dev'
-    args 'example.config'
+    args 'start', 'example.config'
+}
+
+task stop(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = mainClassName
+    jvmArgs '-Dvertxweb.environment=dev'
+    args 'stop'
 }

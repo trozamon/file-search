@@ -8,42 +8,76 @@ import io.vertx.ext.web.handler.StaticHandler;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 class Main {
     public static final String SCHEDULING_CHANNEL = "scheduling";
+    public static final String SHUTDOWN_CHANNEL = "shutdown";
+
+    private static Main m = new Main();
 
     private Config conf;
+    private Vertx vertx;
+    private HttpServer server;
+    private ExecutorService execs;
 
     public static void main(String[] args) {
-        if (args.length != 1) {
-            System.out.println("Usage: file-search <path/to/config>");
+        if (args.length < 1) {
+            System.out.println("Usage: file-search <start|stop> [path/to/config]");
             System.exit(1);
         }
 
-        Config conf = null;
+        if ("stop".equals(args[0])) {
+            m.stop();
+        } else if (args.length == 2) {
+            Config conf = null;
 
-        try {
-            conf = Config.load(args[0]);
-        } catch (IOException ioe) {
-            System.out.println("Could not open config");
-            ioe.printStackTrace();
+            try {
+                conf = Config.load(args[1]);
+            } catch (IOException ioe) {
+                System.out.println("Could not open config");
+                ioe.printStackTrace();
+                System.exit(2);
+            }
+
+            m.conf = conf;
+            m.run();
+        } else {
+            System.out.println("Usage: file-search <start|stop> [path/to/config]");
             System.exit(2);
         }
-
-        new Main(conf).run();
     }
 
-    public Main(Config conf) {
-        this.conf = conf;
+    private void stop() {
+        vertx.eventBus().publish(SHUTDOWN_CHANNEL, "");
+        server.close();
+
+        vertx.close(res -> {
+            if (res.failed()) {
+                System.out.println("Vertx could not closed");
+                return;
+            }
+
+            execs.shutdown();
+
+            try {
+                execs.awaitTermination(48, TimeUnit.HOURS);
+            } catch (InterruptedException ie) {
+                System.out.println("Could not shut ExecutorService down");
+            }
+
+            System.out.println("ExecutorService shut down");
+            System.exit(0);
+        });
     }
 
     private void run() {
-        Vertx vertx = Vertx.vertx();
-        ExecutorService execs = Executors.newFixedThreadPool(1);
+        vertx = Vertx.vertx();
+        execs = Executors.newFixedThreadPool(1);
 
         vertx.exceptionHandler(new ExceptionLogger());
 
-        HttpServer server = vertx.createHttpServer()
+        server = vertx.createHttpServer()
             .exceptionHandler(new ExceptionLogger());
         Router router = Router.router(vertx)
             .exceptionHandler(new ExceptionLogger());
