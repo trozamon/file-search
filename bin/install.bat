@@ -12,7 +12,7 @@ set PR_JVM=%JAVA_HOME%\bin\server\jvm.dll
 set PR_CLASSPATH=%~dp0\lib\*
  
 REM Startup configuration
-set PR_STARTUP=manual
+set PR_STARTUP=auto
 set PR_STARTMODE=jvm
 set PR_STARTCLASS=com.alectenharmsel.indexer.Main
 set PR_STARTMETHOD=main
@@ -23,4 +23,4 @@ set PR_STOPCLASS=com.alectenharmsel.indexer.Main
 set PR_STOPMETHOD=main
 set PR_STOPPARAMS=stop
 
-.\FileSearch //IS/%SERVICE_NAME% --StartParams start ++StartParams file-search.json
+.\FileSearch //IS/%SERVICE_NAME% --ServiceUser LocalSystem --StartParams start ++StartParams file-search.json
