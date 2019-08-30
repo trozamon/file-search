@@ -65,4 +65,3 @@ task stop(type: JavaExec) {
     jvmArgs '-Dvertxweb.environment=dev'
     args 'stop'
 }
-version = '1.0.0'
