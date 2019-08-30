@@ -37,7 +37,7 @@ class Indexer implements Runnable {
     private Config.Index index;
     private Tika tika;
     private RestHighLevelClient client;
-    private boolean running;
+    private volatile boolean running;
 
     public Indexer(Vertx vertx, Config conf, Config.Index index) {
         this.running = true;

@@ -8,6 +8,7 @@ import io.vertx.ext.web.handler.StaticHandler;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 class Main {
     public static final String SCHEDULING_CHANNEL = "scheduling";
@@ -17,11 +18,12 @@ class Main {
 
     private Config conf;
     private Vertx vertx;
+    private HttpServer server;
     private ExecutorService execs;
 
     public static void main(String[] args) {
         if (args.length < 1) {
-            System.out.println("Usage: file-search <start|stop> <path/to/config>");
+            System.out.println("Usage: file-search <start|stop> [path/to/config]");
             System.exit(1);
         }
 
@@ -40,13 +42,33 @@ class Main {
 
             m.conf = conf;
             m.run();
+        } else {
+            System.out.println("Usage: file-search <start|stop> [path/to/config]");
+            System.exit(2);
         }
     }
 
     private void stop() {
         vertx.eventBus().publish(SHUTDOWN_CHANNEL, "");
-        vertx.close();
-        execs.shutdown();
+        server.close();
+
+        vertx.close(res -> {
+            if (res.failed()) {
+                System.out.println("Vertx could not closed");
+                return;
+            }
+
+            execs.shutdown();
+
+            try {
+                execs.awaitTermination(48, TimeUnit.HOURS);
+            } catch (InterruptedException ie) {
+                System.out.println("Could not shut ExecutorService down");
+            }
+
+            System.out.println("ExecutorService shut down");
+            System.exit(0);
+        });
     }
 
     private void run() {
@@ -55,7 +77,7 @@ class Main {
 
         vertx.exceptionHandler(new ExceptionLogger());
 
-        HttpServer server = vertx.createHttpServer()
+        server = vertx.createHttpServer()
             .exceptionHandler(new ExceptionLogger());
         Router router = Router.router(vertx)
             .exceptionHandler(new ExceptionLogger());
