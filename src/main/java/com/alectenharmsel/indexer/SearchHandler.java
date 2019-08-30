@@ -105,7 +105,7 @@ class SearchHandler implements Handler<RoutingContext> {
         SearchRequest req = new SearchRequest(idx); 
         SearchSourceBuilder source = new SearchSourceBuilder(); 
 
-        source.query(QueryBuilders.termQuery("content", q)); 
+        source.query(QueryBuilders.queryStringQuery(q).field("content"));
         source.from((page - 1) * SIZE);
         source.size(SIZE);
         source.timeout(new TimeValue(10, TimeUnit.SECONDS));
