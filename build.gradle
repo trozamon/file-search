@@ -43,6 +43,14 @@ task copySemantic(type: Copy) {
     into 'build/resources/main/webroot'
 }
 
+distZip {
+    into(project.name) {
+        from 'bin'
+        include '*.exe'
+        include '*.bat'
+    }
+}
+
 classes.dependsOn copyJquery
 classes.dependsOn copySemantic
 
