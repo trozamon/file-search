@@ -19,6 +19,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import org.apache.http.ConnectionClosedException;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -31,6 +33,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 class SearchHandler implements Handler<RoutingContext> {
 
+    public static final int MAX_RETRIES = 3;
     public static final int SIZE = 20;
     public static final int SIZE_MAX = 1000;
 
@@ -110,6 +113,16 @@ class SearchHandler implements Handler<RoutingContext> {
     }
 
     private SearchResult search(String idx, String q, int page, int count) {
+        return search(idx, q, page, count, 0);
+    }
+
+    private SearchResult search(String idx, String q, int page, int count, int retries) {
+        SearchResult result = new SearchResult();
+
+        if (retries >= MAX_RETRIES) {
+            return result;
+        }
+
         SearchRequest req = new SearchRequest(idx); 
         SearchSourceBuilder source = new SearchSourceBuilder(); 
 
@@ -120,8 +133,6 @@ class SearchHandler implements Handler<RoutingContext> {
         source.fetchSource(true);
 
         req.source(source);
-
-        SearchResult result = new SearchResult();
 
         try {
             SearchResponse resp = client.search(req, RequestOptions.DEFAULT);
@@ -152,8 +163,14 @@ class SearchHandler implements Handler<RoutingContext> {
 
                 result.filenames.add(decoded);
             }
+        } catch (ConnectionClosedException cce) {
+            client = ElasticUtil.createClient(conf);
+            result = search(idx, q, page, count, retries + 1);
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+            log.log(Level.SEVERE, ioe, () -> "Error querying ElasticSearch");
+        } catch (ElasticsearchStatusException ese) {
+            log.log(Level.WARNING, ese,
+                    () -> "Index " + idx + " does not exist");
         }
 
         return result;
