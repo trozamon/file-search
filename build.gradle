@@ -44,7 +44,7 @@ task copySemantic(type: Copy) {
 }
 
 distZip {
-    into(project.name) {
+    into("${project.name}-${project.version}") {
         from 'bin'
         include '*.exe'
         include '*.bat'
