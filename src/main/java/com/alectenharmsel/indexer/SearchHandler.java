@@ -163,14 +163,14 @@ class SearchHandler implements Handler<RoutingContext> {
 
                 result.filenames.add(decoded);
             }
-        } catch (ConnectionClosedException cce) {
+        } catch (ElasticsearchStatusException ese) {
+            log.log(Level.WARNING, ese,
+                    () -> "Index " + idx + " does not exist");
+        } catch (ConnectionClosedException|RuntimeException cce) {
             client = ElasticUtil.createClient(conf);
             result = search(idx, q, page, count, retries + 1);
         } catch (IOException ioe) {
             log.log(Level.SEVERE, ioe, () -> "Error querying ElasticSearch");
-        } catch (ElasticsearchStatusException ese) {
-            log.log(Level.WARNING, ese,
-                    () -> "Index " + idx + " does not exist");
         }
 
         return result;
