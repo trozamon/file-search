@@ -9,18 +9,18 @@ applicationName = 'file-search'
 mainClassName = 'com.alectenharmsel.indexer.Main'
 
 repositories {
-    jcenter()
+    mavenCentral()
 }
 
 dependencies {
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.9'
-    compile 'com.google.guava:guava:20.0'
-    compile 'io.vertx:vertx-core:3.8.0'
-    compile 'io.vertx:vertx-web-templ-jade:3.8.0'
-    compile 'io.vertx:vertx-web:3.8.0'
-    compile 'org.apache.tika:tika-core:1.22'
-    compile 'org.apache.tika:tika-parsers:1.22'
-    compile 'org.elasticsearch.client:elasticsearch-rest-high-level-client:7.3.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.9'
+    implementation 'com.google.guava:guava:20.0'
+    implementation 'io.vertx:vertx-core:3.8.0'
+    implementation 'io.vertx:vertx-web-templ-jade:3.8.0'
+    implementation 'io.vertx:vertx-web:3.8.0'
+    implementation 'org.apache.tika:tika-core:1.22'
+    implementation 'org.apache.tika:tika-parsers:1.22'
+    implementation 'org.elasticsearch.client:elasticsearch-rest-high-level-client:7.3.1'
 }
 
 task yarn(type: Exec) {
